@@ -99,6 +99,7 @@ contract Vote {
             forWho[msg.sender] = _index;
         } else {
             vote(_index);
+            return;
         }
     }
 
