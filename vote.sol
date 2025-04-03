@@ -37,10 +37,8 @@ contract Vote {
     }
 
     Candidate[] public candidates;
-
     mapping(address => bool) public voters;
     mapping(address => uint) public forWho;
-
 
     function addCandidate(string memory _name) public onlyOwner {
         candidates.push(Candidate(_name, 0));
@@ -64,6 +62,7 @@ contract Vote {
     }
 
     function getWinner() public view onlyOwner returns(string memory){
+        require(block.timestamp >= endTime, "Vote not closed");
         string memory winner;
         uint winnerCount = 0;
         for(uint i = 0; i<candidates.length; i++){
@@ -81,26 +80,25 @@ contract Vote {
         }
         for(uint j = 0; j < votersAddress.length; j++){
            delete voters[votersAddress[j]];
+           delete forWho[votersAddress[j]];
         }
         delete votersAddress;
     }
 
     function premiumVote(uint _index, uint _amount) public payable hasVoted {
-        require(msg.value == _amount, "montant invlaide");
-        if(_amount > 0.01 ether){
-            candidates[_index].voteCount + 2;
-            voters[msg.sender] = true;
-            votersAddress.push(msg.sender);
-            forWho[msg.sender] = _index;
-        } else if (_amount < 0.05 ether) {
-            candidates[_index].voteCount + 5;
-            voters[msg.sender] = true;
-            votersAddress.push(msg.sender);
-            forWho[msg.sender] = _index;
+        require(msg.value == _amount, "montant invalide");
+        if(_amount >= 0.05 ether){
+            candidates[_index].voteCount += 5;
+        } else if (_amount >= 0.01 ether) {
+            candidates[_index].voteCount += 2;         
         } else {
             vote(_index);
             return;
         }
+
+        voters[msg.sender] = true;
+        votersAddress.push(msg.sender);
+        forWho[msg.sender] = _index;
     }
 
 }
