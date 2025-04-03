@@ -25,40 +25,51 @@ contract crowFunding {
         uint pool;
         uint duration;
         uint startTime;
+        uint endTime;
         address payable balance;
         address payable owner;
-        address[] contributors;
+        Contributor[] contributors;
         bool isActive;
+    }
+
+    struct Contributor {
+        address payable addressOfContributor;
+        uint amount;
     }
 
     mapping(uint => Project) public projects;
 
-    function calculDuration(uint _num) private pure returns(uint) {
+    function calculDuration(uint _num) private view returns(uint[3] memory) {
         require(_num > 0, "Minimum 1 day");
-        return _num * 86400;
+        uint startTime = block.timestamp;
+        uint duration = _num * 86400;
+        uint endTime = startTime + duration;
+        uint[3] memory result = [startTime, duration, endTime];
+        return result;
     }
 
     function createProject(string memory _name, string memory _description, uint _objective, uint _duration, address _balance) public {
         uint id = uint(keccak256(abi.encodePacked(_name, block.timestamp)));
-        address[]memory contributors;
-        _duration = calculDuration(_duration);
-        projects[id] = Project(_name, _description, _objective, 0, _duration, block.timestamp, payable(_balance), payable(msg.sender), contributors, true); 
+        Contributor[]memory contributors;
+        uint[3] memory time = calculDuration(_duration);       
+        projects[id] = Project(_name, _description, _objective, 0, time[1], time[0], time[2], payable(_balance), payable(msg.sender), contributors, true); 
         emit Creation(msg.sender, block.timestamp);
     }
 
-    function contribute(uint _id, uint _amount) public payable {
-        require(_amount > 0, "Invalid amount");
-        projects[_id].balance.transfer(_amount);
-        projects[_id].pool += _amount;
-        projects[_id].contributors.push(msg.sender);
-        emit Participated(msg.sender, _amount);
+    function contribute(uint _id) public payable {
+        require(msg.value > 0, "Invalid amount");
+        projects[_id].balance.transfer(msg.value);
+        projects[_id].pool += msg.value;
+        projects[_id].contributors.push(Contributor(payable(msg.sender), msg.value));
+        emit Participated(msg.sender, msg.value);
     }
 
     function manageFunds(uint _id) public payable onlyOwner {
         if(block.timestamp > projects[_id].startTime + projects[_id].duration && projects[_id].pool < projects[_id].objective){
-            // logique a coder pour rembourser les contributeurs si l'objectif de collecte n'est pas réalisé
-
-
+            for(uint i = 0; i < projects[_id].contributors.length; i++) {
+                projects[_id].contributors[i].addressOfContributor.transfer(projects[_id].contributors[i].amount);
+                emit Refund(projects[_id].contributors[i].addressOfContributor, projects[_id].contributors[i].amount);
+            }
         } else if(projects[_id].pool >= projects[_id].objective && block.timestamp >= projects[_id].duration && projects[_id].isActive == true) {
             projects[_id].isActive = false;
             projects[_id].owner.transfer(projects[_id].pool);
