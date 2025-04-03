@@ -18,6 +18,11 @@ contract crowFunding {
         _;
     }
 
+    modifier onlyAdmin(uint _id) {
+        require(msg.sender == projects[_id].owner, "Not auhtorized");
+        _;
+    }
+
     struct Project {
         string name;
         string description;
@@ -65,12 +70,12 @@ contract crowFunding {
     }
 
     function manageFunds(uint _id) public payable onlyOwner {
-        if(block.timestamp > projects[_id].startTime + projects[_id].duration && projects[_id].pool < projects[_id].objective){
+        if(block.timestamp > projects[_id].endTime && projects[_id].pool < projects[_id].objective){
             for(uint i = 0; i < projects[_id].contributors.length; i++) {
                 projects[_id].contributors[i].addressOfContributor.transfer(projects[_id].contributors[i].amount);
                 emit Refund(projects[_id].contributors[i].addressOfContributor, projects[_id].contributors[i].amount);
             }
-        } else if(projects[_id].pool >= projects[_id].objective && block.timestamp >= projects[_id].duration && projects[_id].isActive == true) {
+        } else if(projects[_id].pool >= projects[_id].objective && block.timestamp >= projects[_id].endTime && projects[_id].isActive == true) {
             projects[_id].isActive = false;
             projects[_id].owner.transfer(projects[_id].pool);
         } else {
@@ -79,41 +84,23 @@ contract crowFunding {
 
     }
 
-    function addExtraTime(uint _id, uint _day) public {
-        require(msg.sender == projects[_id].owner, "Not authorized");
+    function addExtraTime(uint _id, uint _day) public onlyAdmin(_id){
         uint extraTime = _day * 86400;
         projects[_id].duration += extraTime;
     }
 
-    function checkProjectStatus(uint _id) public view returns(bool){
-        return projects[_id].isActive;
+    function closeCollect(uint _id) public onlyAdmin(_id){
+        projects[_id].isActive = false;
     }
 
-
-
-    //if(block.timestamp > projects[_id].startTime + projects[_id].duration && projects[_id].pool < projects[_id].objective){}
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    function checkProjectStatus(uint _id) public view returns(string memory){
+        string memory result;
+        if(projects[_id].isActive){
+            result = "Project is loading";
+        } else {
+            result = "Project finished";
+        }
+        return result;
+    }
 
 }
