@@ -1,0 +1,1 @@
+Créer un système de gestion de bibliothèque où les utilisateurs peuvent emprunter et retourner des livres. Le système doit inclure des fonctionnalités pour ajouter de nouveaux livres, vérifier la disponibilité des livres, et gérer les emprunts.
