@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./Book.sol";
 
-contract Library {
+contract LibraryContract {
 
     address public owner;
 
@@ -18,7 +18,7 @@ contract Library {
         UserType role;    
         uint bookBorrowedCounter;
         uint bookDownloadedCounter;
-        Book [] booksReaded;
+        BookStruct [] booksReaded;
     }
 
     mapping(address => User) public users;
@@ -30,6 +30,7 @@ contract Library {
 
     modifier onlyOwner(){
         require(msg.sender == owner, "Not authorized");
+        _;
     }
 
     function addUser(string memory _name) private onlyAdmin() {
@@ -42,6 +43,16 @@ contract Library {
         users[msg.sender] = User(_name, UserType.Admin, 0, 0, books);
     }
 
+    function whatReaded(address _user) public returns(string[] memory) {
+        require(users[_user].bookReaded.length > 0, "You didn't read books.");
+        string [] memory results;
+        for(uint i = 0; i < users[_user].booksReaded.length; i++) {
+            results.push(booksReaded[i].title);
+        }
+        return results;
+    }
+
+    
 
 
 }

@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "./IBook.sol";
+import "./LibraryContract.sol";
 
-contract Book is IBook {
+contract Book is IBook, LibraryContract {
 
     enum BookType {Digital, Physical}
  
@@ -19,8 +20,6 @@ contract Book is IBook {
         string edition;
         uint fileSize;
         string fileFormat;
-        string [] state; // A VOIR
-        address [] // A VOIR
     }
 
     mapping(uint => BookStruct) public books;
@@ -31,7 +30,7 @@ contract Book is IBook {
         _;
     }
 
-    function addBook(string memory _title, string memory _author, string memory _description, uint _price, bool _available, uint _bookType, uint _weight, string memory _edition, uint _fileSize, string memory _fileFormat) public {
+    function addBook(string memory _title, string memory _author, string memory _description, uint _price, bool _available, uint _bookType, uint _weight, string memory _edition, uint _fileSize, string memory _fileFormat) public onlyAdmin(){
         BookType bookTypeEnum;
 
         if (_bookType > 1) {
@@ -50,15 +49,21 @@ contract Book is IBook {
         books[booksArray.length] = BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, _weight, _edition, _fileSize, _fileFormat);
     }
 
-    function borrowBook(uint _id) public onlyPhysicalBook(_id){
+    function borrowBook(uint _id) public onlyPhysicalBook(_id) {
+        require(isAvailable(books[_id]) == true, "Book not available.");
+        BookStruct storage bookStruct = books[_id];
+        User storage user = users[msg.sender];
+        user.bookBorrowedCounter ++;
+        user.booksReaded.push(bookStruct);
         books[_id].available = false;
+
     }
 
     function returnBook(uint _id) public onlyPhysicalBook(_id){
         books[_id].available = true;
     }
 
-    function isAvailable(uint _id) public view  returns(bool){
+    function isAvailable(uint _id) public view returns(bool){
         return books[_id].available;
     }
 
