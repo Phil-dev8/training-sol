@@ -19,6 +19,8 @@ contract Book is IBook {
         string edition;
         uint fileSize;
         string fileFormat;
+        string [] state; // A VOIR
+        address [] // A VOIR
     }
 
     mapping(uint => BookStruct) public books;
@@ -46,10 +48,6 @@ contract Book is IBook {
 
         booksArray.push(BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, _weight, _edition, _fileSize, _fileFormat));
         books[booksArray.length] = BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, _weight, _edition, _fileSize, _fileFormat);
-    }
-
-    function getBookTypeEnum(BookType _bookType) private pure returns(uint) {
-        return uint(_bookType);
     }
 
     function borrowBook(uint _id) public onlyPhysicalBook(_id){
