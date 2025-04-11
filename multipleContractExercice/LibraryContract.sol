@@ -60,7 +60,7 @@ contract LibraryContract {
     }
 
     function getUser(address _user) public view returns(string memory, string memory, string[] memory) {
-        // require(users[_user].name > bytes());
+        require(bytes(users[_user].name).length > 0, "User doesn't exist");
         string memory role = users[_user].role == UserType.User ? "User" : "Admin";
         uint length = users[_user].booksReaded.length;
         string[] memory results = new string[](length);

@@ -7,6 +7,11 @@ import "./LibraryContract.sol";
 contract Book is IBook, LibraryContract {
 
     enum BookType {Digital, Physical}
+    enum BookState {New, Excellent, Used, NULL}
+    event BookBought(address indexed, string bookTitle);
+    event BookBorrowed(address indexed, string bookTitle);
+    event BookReturned(address indexed, string bookTitle);
+
  
     struct BookStruct {
         uint id;
@@ -16,6 +21,7 @@ contract Book is IBook, LibraryContract {
         uint price;
         bool available;
         BookType bookType;
+        BookState bookState;
         uint weight;
         string edition;
         uint fileSize;
@@ -30,23 +36,31 @@ contract Book is IBook, LibraryContract {
         _;
     }
 
-    function addBook(string memory _title, string memory _author, string memory _description, uint _price, bool _available, uint _bookType, uint _weight, string memory _edition, uint _fileSize, string memory _fileFormat) public onlyAdmin(){
-        BookType bookTypeEnum;
+    modifier onlyDigitalBook(uint _id) {
+        require(books[_id].bookType == BookType.Digital, "Physical book !");
+        _;
+    }
 
-        if (_bookType > 1) {
-            revert("BookType invalid");
-        } else if (_bookType == 0) {
+    function addBook(string memory _title, string memory _author, string memory _description, uint _price, bool _available, uint _bookType, uint _bookState, uint _weight, string memory _edition, uint _fileSize, string memory _fileFormat) public onlyAdmin(){
+        require(_bookState <= uint(BookState.NULL), "Invalid state");
+        require(_bookType <= uint(BookType.Digital), "Invalid type");
+        BookType bookTypeEnum;
+        BookState bookState;
+
+        if (_bookType == 0) {
             bookTypeEnum = BookType.Digital;
+            bookState = BookState.NULL;
             _weight = 0;
             _edition = "";
         } else if (_bookType == 1) {
             bookTypeEnum = BookType.Physical;
+            bookState = BookState(_bookState);
             _fileSize = 0;
             _fileFormat = "";
         }
 
-        booksArray.push(BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, _weight, _edition, _fileSize, _fileFormat));
-        books[booksArray.length] = BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, _weight, _edition, _fileSize, _fileFormat);
+        booksArray.push(BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, bookState, _weight, _edition, _fileSize, _fileFormat));
+        books[booksArray.length] = BookStruct(booksArray.length, _title, _author, _description, _price, _available, bookTypeEnum, bookState, _weight, _edition, _fileSize, _fileFormat);
     }
 
     function borrowBook(uint _id) public onlyPhysicalBook(_id) {
@@ -56,16 +70,27 @@ contract Book is IBook, LibraryContract {
         user.bookBorrowedCounter ++;
         user.booksReaded.push(bookStruct);
         books[_id].available = false;
-
+        emit BookBorrowed(msg.sender, books[_id].title);
     }
 
     function returnBook(uint _id) public onlyPhysicalBook(_id) {
         require(books[_id].available == false, "Already available");
         books[_id].available = true;
+        emit BookReturned(msg.sender, books[_id].title);
     }
 
     function isAvailable(uint _id) public view returns(bool){
         return books[_id].available;
+    }
+
+    function buyBook(uint _id) public payable {
+        require(isAvailable(_id) == true, "Book not available.");
+        require(msg.value == books[_id].price, "Incorrect amount");
+        BookStruct storage bookStruct = books[_id];
+        User storage user = users[msg.sender];
+        user.booksReaded.push(bookStruct);
+        books[_id].available = false;
+        emit BookBought(msg.sender, books[_id].title);
     }
 
     function getBookDetails(uint _id) public view returns(string memory, string memory, string memory, uint, bool, uint, uint, string memory, uint, string memory) {
