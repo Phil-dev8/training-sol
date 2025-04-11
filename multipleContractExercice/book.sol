@@ -50,7 +50,7 @@ contract Book is IBook, LibraryContract {
     }
 
     function borrowBook(uint _id) public onlyPhysicalBook(_id) {
-        require(isAvailable(books[_id]) == true, "Book not available.");
+        require(isAvailable(_id) == true, "Book not available.");
         BookStruct storage bookStruct = books[_id];
         User storage user = users[msg.sender];
         user.bookBorrowedCounter ++;
@@ -59,7 +59,8 @@ contract Book is IBook, LibraryContract {
 
     }
 
-    function returnBook(uint _id) public onlyPhysicalBook(_id){
+    function returnBook(uint _id) public onlyPhysicalBook(_id) {
+        require(books[_id].available == false, "Already available");
         books[_id].available = true;
     }
 
