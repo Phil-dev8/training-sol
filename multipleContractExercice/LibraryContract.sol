@@ -33,12 +33,12 @@ contract LibraryContract {
         _;
     }
 
-    function addUser(string memory _name) private onlyAdmin() {
+    function addUser(string memory _name) public {
         Book.BookStruct[] memory books = new Book.BookStruct[](0);
         users[msg.sender] = User(_name, UserType.User, 0, 0, books);
     }
 
-    function addAdmin(string memory _name) private onlyOwner(){
+    function addAdmin(string memory _name) public onlyOwner(){
         Book.BookStruct[] memory books = new Book.BookStruct[](0);
         users[msg.sender] = User(_name, UserType.Admin, 0, 0, books);
     }
@@ -63,13 +63,12 @@ contract LibraryContract {
         require(bytes(users[_user].name).length > 0, "User doesn't exist");
         string memory role = users[_user].role == UserType.User ? "User" : "Admin";
         uint length = users[_user].booksReaded.length;
-        string[] memory results = new string[](length);
-        if(users[_user].booksReaded.length == 0){
-            results = new string[](1);
+        string[] memory results = new string[](length> 0 ? length : 1);
+        if(length == 0){
             results[0] = "You have not read books";
         } else {
-            for (uint i = 0; i < users[_user].booksReaded.length; i ++) {
-            results[i]= users[_user].booksReaded[i].title;
+            for (uint i = 0; i < length; i ++) {
+                results[i]= users[_user].booksReaded[i].title;
             }
         }
         return (users[_user].name, role, results);
